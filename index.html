@@ -1,8 +1,7 @@
-2
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Карта с зонами охвата</title>
+    <title>Картографический мониторинг</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -11,28 +10,66 @@
     
     <!-- Основные стили -->
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Общий контейнер */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         /* Стили для шапки */
         header {
             background: #2c3e50;
             color: white;
-            padding: 2rem 1rem;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: relative;
+            padding: 1rem;
             transition: background 0.3s;
+            flex: 0 0 30%; /* Занимает 30% высоты */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
         }
         
         header h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            letter-spacing: 1px;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Кнопка геолокации */
+        #locateBtn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            align-self: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #locateBtn:hover {
+            background: #2980b9;
         }
 
         /* Анимация мигания */
@@ -46,38 +83,16 @@
             animation: blink 1s infinite;
         }
 
-        /* Кнопка геолокации */
-        #locateBtn {
-            position: absolute;
-            top: 1.5rem;
-            right: 1rem;
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        #locateBtn:hover {
-            background: #2980b9;
-        }
-
         /* Контейнер карты */
         .map-container {
+            flex: 0 0 70%; /* Занимает 70% высоты */
             position: relative;
-            margin: 20px;
-            border: 8px solid #34495e;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
             overflow: hidden;
         }
 
         #map {
             width: 100%;
-            height: calc(100vh - 250px);
+            height: 100%;
         }
 
         /* Стили для кругов на карте */
@@ -95,27 +110,38 @@
 
         /* Адаптивность */
         @media (max-width: 768px) {
-            header h1 {
-                font-size: 2rem;
+            header {
+                flex: 0 0 auto; /* Автоматическая высота */
+                padding: 1rem 0.5rem;
             }
-            
-            #map {
-                height: calc(100vh - 200px);
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            header p {
+                font-size: 0.9rem;
+            }
+
+            .map-container {
+                flex: 1; /* Занимает оставшееся пространство */
             }
         }
     </style>
 </head>
 <body>
-    <!-- Шапка сайта -->
-    <header id="mainHeader">
-        <h1>Картографический мониторинг</h1>
-        <p>Зоны охвата с радиусом 375 метров</p>
-        <button id="locateBtn">📍 Найти меня</button>
-    </header>
+    <div class="container">
+        <!-- Шапка сайта -->
+        <header id="mainHeader">
+            <h1>Картографический мониторинг</h1>
+            <p>Зоны охвата с радиусом 375 метров</p>
+            <button id="locateBtn">📍 Найти меня</button>
+        </header>
 
-    <!-- Контейнер с картой -->
-    <div class="map-container">
-        <div id="map"></div>
+        <!-- Контейнер с картой -->
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
     </div>
 
     <!-- Leaflet JS -->
