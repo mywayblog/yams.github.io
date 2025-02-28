@@ -25,12 +25,24 @@
             text-align: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             position: relative;
+            transition: background 0.3s;
         }
         
         header h1 {
             margin: 0;
             font-size: 2.5rem;
             letter-spacing: 1px;
+        }
+
+        /* Анимация мигания */
+        @keyframes blink {
+            0% { background: #ff4444; }
+            50% { background: #2c3e50; }
+            100% { background: #ff4444; }
+        }
+
+        .blink {
+            animation: blink 1s infinite;
         }
 
         /* Кнопка геолокации */
@@ -94,7 +106,7 @@
 </head>
 <body>
     <!-- Шапка сайта -->
-    <header>
+    <header id="mainHeader">
         <h1>Картографический мониторинг</h1>
         <p>Зоны охвата с радиусом 375 метров</p>
         <button id="locateBtn">📍 Найти меня</button>
@@ -123,25 +135,23 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Добавляем статичные маркеры и круги
+        // Создаем статичные круги и сохраняем их в массив
+        const circles = [];
         points.forEach(point => {
-            L.marker(point).addTo(map)
-                .bindPopup(`
-                    <div style="text-align: center">
-                        <b>Координаты:</b><br>
-                        ${point[0].toFixed(6)}, ${point[1].toFixed(6)}
-                    </div>
-                `);
-
-            L.circle(point, {
+            const circle = L.circle(point, {
                 radius: 375,
                 className: 'circle-style'
             }).addTo(map);
+            
+            circles.push(circle);
         });
 
         // Элементы для текущего местоположения
         let userMarker;
         let userCircle;
+
+        // Ссылка на header
+        const header = document.getElementById('mainHeader');
 
         // Кнопка геолокации
         document.getElementById('locateBtn').addEventListener('click', () => {
@@ -156,13 +166,14 @@
         // Обработчик успешного определения местоположения
         map.on('locationfound', (e) => {
             const radius = e.accuracy / 2;
+            const userLatLng = e.latlng;
 
             // Удаляем предыдущие метки
             if (userMarker) map.removeLayer(userMarker);
             if (userCircle) map.removeLayer(userCircle);
 
             // Создаем новую метку и круг
-            userMarker = L.marker(e.latlng, {
+            userMarker = L.marker(userLatLng, {
                 icon: L.divIcon({
                     className: 'user-location-icon',
                     html: '<i class="fas fa-user"></i>',
@@ -170,13 +181,28 @@
                 })
             }).addTo(map).bindPopup('Ваше текущее местоположение');
 
-            userCircle = L.circle(e.latlng, {
+            userCircle = L.circle(userLatLng, {
                 radius: radius,
                 className: 'user-location'
             }).addTo(map);
 
+            // Проверяем попадание в зоны
+            let inZone = false;
+            circles.forEach(circle => {
+                if (circle.getBounds().contains(userLatLng)) {
+                    inZone = true;
+                }
+            });
+
+            // Управление миганием
+            if (inZone) {
+                header.classList.add('blink');
+            } else {
+                header.classList.remove('blink');
+            }
+
             // Масштабируем карту
-            map.setView(e.latlng, 16);
+            map.setView(userLatLng, 16);
         });
 
         // Обработчик ошибок геолокации
