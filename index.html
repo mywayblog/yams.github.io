@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Карта с зонами охвата</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Основные стили -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Стили для шапки */
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        /* Контейнер карты */
+        .map-container {
+            position: relative;
+            margin: 20px;
+            border: 8px solid #34495e;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: calc(100vh - 250px);
+        }
+
+        /* Стили для кругов на карте */
+        .circle-style {
+            color: #e74c3c;
+            fillOpacity: 0.2;
+            weight: 2;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            #map {
+                height: calc(100vh - 200px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header>
+        <h1>Картографический мониторинг</h1>
+        <p>Зоны охвата с радиусом 375 метров</p>
+    </header>
+
+    <!-- Контейнер с картой -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Координаты точек
+        const points = [
+            [56.337869, 38.129789],
+            [56.332053, 38.146784],
+            [56.354361, 38.137514],
+            [56.340190, 38.038810],
+            [56.318350, 38.047737],
+            [56.326840, 38.232101],
+            [56.361731, 38.300079]
+        ];
+
+        // Инициализация карты
+        const map = L.map('map').setView(points[0], 14);
+
+        // Добавляем слой OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Добавляем маркеры и круги
+        points.forEach(point => {
+            // Маркер с всплывающей подсказкой
+            L.marker(point).addTo(map)
+                .bindPopup(`
+                    <div style="text-align: center">
+                        <b>Координаты:</b><br>
+                        ${point[0].toFixed(6)}, ${point[1].toFixed(6)}
+                    </div>
+                `);
+
+            // Круг с радиусом 375 метров
+            L.circle(point, {
+                radius: 375,
+                className: 'circle-style'
+            }).addTo(map);
+        });
+
+        // Автоматическое масштабирование
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds);
+    </script>
+</body>
+</html>
