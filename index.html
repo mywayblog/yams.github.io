@@ -1,4 +1,4 @@
-1
+2
 <!DOCTYPE html>
 <html>
 <head>
@@ -118,13 +118,6 @@
         <div id="map"></div>
     </div>
 
-    <!-- Звуковое уведомление -->
-    <audio id="alertSound" preload="auto">
-        <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_sproing.ogg" type="audio/ogg">
-        <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_sproing.mp3" type="audio/mpeg">
-        Ваш браузер не поддерживает аудио.
-    </audio>
-
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -160,10 +153,6 @@
 
         // Ссылка на header
         const header = document.getElementById('mainHeader');
-        const alertSound = document.getElementById('alertSound');
-
-        // Флаг для отслеживания состояния воспроизведения
-        let isAlertPlaying = false;
 
         // Кнопка геолокации
         document.getElementById('locateBtn').addEventListener('click', () => {
@@ -206,25 +195,11 @@
                 }
             });
 
-            // Управление миганием и звуком
+            // Управление миганием
             if (inZone) {
                 header.classList.add('blink');
-
-                // Воспроизводим звук, если он еще не играет
-                if (!isAlertPlaying) {
-                    alertSound.loop = true; // Зацикливаем воспроизведение
-                    alertSound.play();
-                    isAlertPlaying = true;
-                }
             } else {
                 header.classList.remove('blink');
-
-                // Останавливаем звук, если пользователь вышел из зоны
-                if (isAlertPlaying) {
-                    alertSound.pause();
-                    alertSound.currentTime = 0; // Сбрасываем позицию воспроизведения
-                    isAlertPlaying = false;
-                }
             }
 
             // Масштабируем карту
