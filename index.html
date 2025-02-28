@@ -153,6 +153,27 @@
         // Ссылка на header
         const header = document.getElementById('mainHeader');
 
+        // Настройка синтеза речи
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance("впереди яма!");
+        utterance.lang = 'ru-RU'; // Русский язык
+        utterance.rate = 1.2; // Скорость речи (чуть быстрее обычного)
+        let isInZone = false; // Флаг для управления воспроизведением
+
+        // Функция для запуска воспроизведения с повторением
+        function startWarning() {
+            if (!synth.speaking && isInZone) {
+                synth.speak(utterance);
+            }
+        }
+
+        // Повторение после окончания фразы
+        utterance.onend = () => {
+            if (isInZone) {
+                startWarning();
+            }
+        };
+
         // Кнопка геолокации
         document.getElementById('locateBtn').addEventListener('click', () => {
             map.locate({
@@ -194,11 +215,19 @@
                 }
             });
 
-            // Управление миганием
+            // Управление миганием и звуком
             if (inZone) {
                 header.classList.add('blink');
+                if (!isInZone) { // Запускаем только если это первое попадание в зону
+                    isInZone = true;
+                    startWarning();
+                }
             } else {
                 header.classList.remove('blink');
+                if (isInZone) { // Останавливаем только если были в зоне
+                    isInZone = false;
+                    synth.cancel(); // Останавливаем речь
+                }
             }
 
             // Масштабируем карту
