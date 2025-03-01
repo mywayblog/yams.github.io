@@ -1,3 +1,3 @@
 # Проверяйте базу каждую неделю 
 
-# yams.github.io
+# yamsRF.github.io
