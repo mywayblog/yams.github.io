@@ -10,41 +10,80 @@
     
     <!-- Основные стили -->
     <style>
-* {
-    margin: 0;
-    padding: 0;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+
+/* Белый ободок */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 15px solid white; /* Изменено с 4px на 15px */
+    pointer-events: none;
+    z-index: 1000;
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    outline: 5px solid white; /* Белая рамка */
-    position: relative;
-}
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            z-index: 1;
+        }
 
-.container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
+        header {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            transition: background 0.3s;
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1001;
+        }
+        
+        /* Анимация мигания для header */
+        @keyframes blink {
+            0% { background: #ff4444; }
+            50% { background: #2c3e50; }
+            100% { background: #ff4444; }
+        }
 
-header {
-    background: #2c3e50;
-    color: white;
-    text-align: center;
-    padding: 1rem;
-    transition: background 0.3s;
-    flex: 0 0 30%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: relative;
-    z-index: 1; /* Чтобы header был поверх рамки */
-}
+        /* Анимация мигания для ободка */
+        @keyframes border-blink {
+            0% { border-color: #ff4444; }
+            50% { border-color: white; }
+            100% { border-color: #ff4444; }
+        }
+
+        /* Состояние мигания */
+        .blink {
+            animation: blink 0.5s infinite;
+        }
+
+        body.blink-border::before {
+            animation: border-blink 0.5s infinite;
+        }
+
+        /* Остальные стили остаются без изменений */
         header h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
@@ -55,7 +94,6 @@ header {
             margin-bottom: 1rem;
         }
 
-        /* Кнопка геолокации */
         #locateBtn {
             background: #3498db;
             color: white;
@@ -72,28 +110,8 @@ header {
             background: #2980b9;
         }
 
-  @keyframes blink {
-    0% { background: #ff4444; }
-    50% { background: #2c3e50; }
-    100% { background: #ff4444; }
-}
-
-.blink {
-    animation: blink 0.5s infinite;
-}
-
-/* Новая анимация для рамки */
-@keyframes border-blink {
-    0%, 100% { outline-color: #ff4444; }
-    50% { outline-color: white; }
-}
-
-.border-blink {
-    animation: border-blink 0.5s infinite;
-}
-        /* Контейнер карты */
         .map-container {
-            flex: 0 0 70%; /* Занимает 70% высоты */
+            flex: 0 0 70%;
             position: relative;
             overflow: hidden;
         }
@@ -103,23 +121,20 @@ header {
             height: 100%;
         }
 
-        /* Стили для кругов на карте */
         .circle-style {
             color: #e74c3c;
             fillOpacity: 0.2;
             weight: 2;
         }
 
-        /* Стиль для текущего местоположения */
         .user-location {
             color: #2ecc71 !important;
             fillOpacity: 0.3;
         }
 
-        /* Адаптивность */
         @media (max-width: 768px) {
             header {
-                flex: 0 0 auto; /* Автоматическая высота */
+                flex: 0 0 auto;
                 padding: 1rem 0.5rem;
             }
 
@@ -132,126 +147,37 @@ header {
             }
 
             .map-container {
-                flex: 1; /* Занимает оставшееся пространство */
+                flex: 1;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка сайта -->
         <header id="mainHeader">
             <h1>Картографический мониторинг</h1>
             <p>Зоны охвата с радиусом 375 метров</p>
             <button id="locateBtn">📍 Найти меня</button>
         </header>
 
-        <!-- Контейнер с картой -->
         <div class="map-container">
             <div id="map"></div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
- // Координаты точек
-const points = [
-    [56.375210, 38.110526],
-    [56.375704, 38.109996],
-    [56.389674, 38.108720],
-    [56.469886, 38.096997],
-    [56.767876, 38.076055],
-    [56.770067, 38.075043],
-    [56.796393, 38.070383],
-    [56.797835, 38.070557],
-    [56.799317, 38.070758],
-    [56.800297, 38.070822],
-    [56.804447, 38.070349],
-    [56.810107, 38.068979],
-    [56.814143, 38.069587],
-    [56.819691, 38.071771],
-    [56.828395, 38.076192],
-    [56.837014, 38.081004],
-    [56.839639, 38.082465],
-    [56.841290, 38.083390],
-    [56.843422, 38.084591],
-    [56.844542, 38.085204],
-    [56.846409, 38.086238],
-    [56.847849, 38.086961],
-    [56.848585, 38.087251],
-    [56.851470, 38.087933],
-    [56.852168, 38.087794],
-    [56.852867, 38.087626],
-    [56.854476, 38.087119],
-    [56.861065, 38.083177],
-    [56.862389, 38.082035],
-    [56.865232, 38.079970],
-    [56.866734, 38.079189],
-    [56.868919, 38.078147],
-    [56.869845, 38.077695],
-    [56.872616, 38.076544],
-    [56.877277, 38.078216],
-    [56.878171, 38.078705],
-    [56.880557, 38.079446],
-    [56.890993, 38.080868],
-    [56.891903, 38.081010],
-    [56.895642, 38.083282],
-    [56.898565, 38.085985],
-    [56.907282, 38.093525],
-    [56.907932, 38.094033],
-    [56.908811, 38.094678],
-    [56.909512, 38.095209],
-    [56.910215, 38.095790],
-    [56.914671, 38.097883],
-    [56.915685, 38.098037],
-    [56.916913, 38.098068],
-    [56.922944, 38.097710],
-    [56.923696, 38.097650],
-    [56.924934, 38.097582],
-    [56.951949, 38.097901],
-    [56.959490, 38.094767],
-    [56.960697, 38.094225],
-    [56.964603, 38.092489],
-    [56.978365, 38.086405],
-    [56.982726, 38.082029],
-    [56.984150, 38.080133],
-    [56.984639, 38.079431],
-    [56.984795, 38.079187],
-    [56.989721, 38.071814],
-    [56.991133, 38.070096],
-    [56.992577, 38.068370],
-    [56.993384, 38.067365],
-    [56.993984, 38.066582],
-    [56.994570, 38.065807],
-    [56.994960, 38.065291],
-    [57.002032, 38.057934],
-    [57.003256, 38.056077],
-    [57.009227, 38.045811],
-    [57.016391, 38.033229],
-    [57.024236, 38.014136],
-    [57.024385, 38.012942],
-    [57.049071, 37.936836],
-    [57.050278, 37.936303],
-    [57.065549, 37.933134],
-    [57.067036, 37.932813],
-    [57.068032, 37.932582],
-    [57.068739, 37.932427],
-    [57.069268, 37.932312],
-    [57.091010, 37.926760],
-    [57.092568, 37.926167],
-    [57.094670, 37.925362]
-];
+        const points = [
+            [56.375210, 38.110526],
+            [56.375704, 38.109996]
+        ];
 
-        // Инициализация карты
         const map = L.map('map').setView(points[0], 14);
 
-        // Добавляем слой OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Создаем статичные круги и сохраняем их в массив
         const circles = [];
         points.forEach(point => {
             const circle = L.circle(point, {
@@ -262,14 +188,10 @@ const points = [
             circles.push(circle);
         });
 
-        // Элементы для текущего местоположения
         let userMarker;
         let userCircle;
-
-        // Ссылка на header
         const header = document.getElementById('mainHeader');
 
-        // Кнопка геолокации
         document.getElementById('locateBtn').addEventListener('click', () => {
             map.locate({
                 watch: true,
@@ -279,16 +201,13 @@ const points = [
             });
         });
 
-        // Обработчик успешного определения местоположения
         map.on('locationfound', (e) => {
             const radius = e.accuracy / 2;
             const userLatLng = e.latlng;
 
-            // Удаляем предыдущие метки
             if (userMarker) map.removeLayer(userMarker);
             if (userCircle) map.removeLayer(userCircle);
 
-            // Создаем новую метку и круг
             userMarker = L.marker(userLatLng, {
                 icon: L.divIcon({
                     className: 'user-location-icon',
@@ -302,7 +221,6 @@ const points = [
                 className: 'user-location'
             }).addTo(map);
 
-            // Проверяем попадание в зоны
             let inZone = false;
             circles.forEach(circle => {
                 if (circle.getBounds().contains(userLatLng)) {
@@ -310,22 +228,20 @@ const points = [
                 }
             });
 
-// В обработчике locationfound
-if (inZone) {
-    header.classList.add('blink');
-    document.body.classList.add('border-blink'); // Добавлено
-} else {
-    header.classList.remove('blink');
-    document.body.classList.remove('border-blink'); // Добавлено
-}
+            // Управление миганием
+            if (inZone) {
+                header.classList.add('blink');
+                document.body.classList.add('blink-border');
+            } else {
+                header.classList.remove('blink');
+                document.body.classList.remove('blink-border');
+            }
 
-            // Масштабируем карту
             map.setView(userLatLng, 16);
         });
 
-        // Обработчик ошибок геолокации
         map.on('locationerror', (e) => {
-            alert('Не удалось определить местоположение. Проверьте настройки геолокации в браузере.');
+            alert('Не удалось определить местоположение');
             console.error(e);
         });
     </script>
