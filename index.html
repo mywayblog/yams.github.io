@@ -34,7 +34,7 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    border: 25px solid white; /* Изменено с 4px на 15px */
+    border: 15px solid white; /* Изменено с 4px на 15px */
     pointer-events: none;
     z-index: 1000;
     box-sizing: border-box;
@@ -315,7 +315,7 @@ const points = [
                     className: 'user-location-icon',
                     html: '<div class="triangle-icon"></div>',
                     iconSize: [40, 40],        // Размер 40x40
-                    iconAnchor: [20, 40]       // Точка привязки (центр-низ)
+                    iconAnchor: [20, 20]       // Точка привязки (центр-центр)
                 })
             }).addTo(map).bindPopup('Ваше текущее местоположение');
 
