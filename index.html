@@ -7,6 +7,7 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     
     <!-- Основные стили -->
     <style>
@@ -151,6 +152,26 @@ body::before {
             }
         }
     </style>
+
+        <style>
+        /* Стиль треугольника */
+        .triangle-icon {
+            width: 0;
+            height: 0;
+            border-left: 7.5px solid transparent;
+            border-right: 7.5px solid transparent;
+            border-bottom: 15px solid #2ecc71; /* Цвет как в user-location */
+            margin: auto;
+            transform: rotate(0deg);
+            transition: transform 0.3s;
+        }
+        
+        /* Анимация поворота при наведении */
+        .triangle-icon:hover {
+            transform: rotate(180deg);
+        }
+    </style>
+    
 </head>
 <body>
     <div class="container">
@@ -211,8 +232,9 @@ body::before {
             userMarker = L.marker(userLatLng, {
                 icon: L.divIcon({
                     className: 'user-location-icon',
-                    html: '<i class="fas fa-user"></i>',
-                    iconSize: [20, 20]
+                    html: '<div class="triangle-icon"></div>', // Измененный HTML
+                    iconSize: [15, 15], // Размер иконки 15x15
+                    iconAnchor: [7.5, 15] // Точка привязки (центр-низ)
                 })
             }).addTo(map).bindPopup('Ваше текущее местоположение');
 
