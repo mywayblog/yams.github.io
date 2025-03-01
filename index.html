@@ -305,9 +305,13 @@ points.forEach(point => {
         
         
         
-        let userMarker;
-        let userCircle;
-        const header = document.getElementById('mainHeader');
+let userMarker;
+let userCircle;
+const header = document.getElementById('mainHeader');
+
+// Добавьте здесь
+const alarmSound = new Audio('https://github.com/mywayblog/yams.github.io/raw/refs/heads/main/b08bddbbb1325c4.mp3');
+alarmSound.loop = true;
 
         document.getElementById('locateBtn').addEventListener('click', () => {
             map.locate({
@@ -345,15 +349,18 @@ points.forEach(point => {
                     inZone = true;
                 }
             });
-
-            // Управление миганием
-            if (inZone) {
-                header.classList.add('blink');
-                document.body.classList.add('blink-border');
-            } else {
-                header.classList.remove('blink');
-                document.body.classList.remove('blink-border');
-            }
+// Управление миганием и звуком
+if (inZone) {
+    header.classList.add('blink');
+    document.body.classList.add('blink-border');
+    if (!alarmSound.paused) return;
+    alarmSound.play().catch(err => console.log('Звук заблокирован браузером'));
+} else {
+    header.classList.remove('blink');
+    document.body.classList.remove('blink-border');
+    alarmSound.pause();
+    alarmSound.currentTime = 0;
+}
 
             map.setView(userLatLng, 16);
         });
