@@ -10,41 +10,41 @@
     
     <!-- Основные стили -->
     <style>
-        * {
-            margin: 0;
-            padding: 50;
-            box-sizing: border-box;
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    outline: 5px solid white; /* Белая рамка */
+    position: relative;
+}
 
-        /* Общий контейнер */
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
 
-        /* Стили для шапки */
-        header {
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 1rem;
-            transition: background 0.3s;
-            flex: 0 0 30%; /* Занимает 30% высоты */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-        }
-        
+header {
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    transition: background 0.3s;
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1; /* Чтобы header был поверх рамки */
+}
         header h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
@@ -72,17 +72,25 @@
             background: #2980b9;
         }
 
-        /* Анимация мигания */
-        @keyframes blink {
-            0% { background: #ff4444; }
-            50% { background: #2c3e50; }
-            100% { background: #ff4444; }
-        }
+  @keyframes blink {
+    0% { background: #ff4444; }
+    50% { background: #2c3e50; }
+    100% { background: #ff4444; }
+}
 
-        .blink {
-            animation: blink 0.5s infinite;
-        }
+.blink {
+    animation: blink 0.5s infinite;
+}
 
+/* Новая анимация для рамки */
+@keyframes border-blink {
+    0%, 100% { outline-color: #ff4444; }
+    50% { outline-color: white; }
+}
+
+.border-blink {
+    animation: border-blink 0.5s infinite;
+}
         /* Контейнер карты */
         .map-container {
             flex: 0 0 70%; /* Занимает 70% высоты */
@@ -302,12 +310,14 @@ const points = [
                 }
             });
 
-            // Управление миганием
-            if (inZone) {
-                header.classList.add('blink');
-            } else {
-                header.classList.remove('blink');
-            }
+// В обработчике locationfound
+if (inZone) {
+    header.classList.add('blink');
+    document.body.classList.add('border-blink'); // Добавлено
+} else {
+    header.classList.remove('blink');
+    document.body.classList.remove('border-blink'); // Добавлено
+}
 
             // Масштабируем карту
             map.setView(userLatLng, 16);
