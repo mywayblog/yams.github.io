@@ -174,15 +174,6 @@ body::before {
         }
 
             /* Стиль маркеров точек */
-.point-marker {
-    width: 20px;
-    height: 20px;
-    background: #e74c3c;
-    border: 2px solid black;
-    border-radius: 50%;
-    margin: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
     </style>
     
 </head>
@@ -289,21 +280,6 @@ const points = [
 ];
 
 
-        points.forEach(point => {
-    // Создаем круг (уже было)
-    const circle = L.circle(point, {
-        radius: 375,
-        className: 'circle-style'
-    }).addTo(map);
-    
-    // Добавляем маркер для точки
-    L.marker(point, {
-        icon: L.divIcon({
-            className: 'point-marker',
-            iconSize: [20, 20]
-        })
-    }).addTo(map).bindPopup('Контрольная точка');
-});
 
         
         const map = L.map('map').setView(points[0], 14);
