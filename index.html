@@ -160,11 +160,11 @@ body::before {
             height: 0;
             border-left: 20px solid transparent;   /* Половина ширины */
             border-right: 20px solid transparent;  /* Половина ширины */
-    border-bottom: 40px solid #19d9e3; /* Новый цвет */
+    border-bottom: 40px solid red; /* Новый цвет */
             margin: auto;
             transform: rotate(0deg);
             transition: transform 0.3s;
-                box-shadow: 0 0 0 2px black; /* Черная обводка */
+                box-shadow: 0 0 0 4px black; /* Черная обводка */
 
         }
         
@@ -288,16 +288,23 @@ const points = [
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        const circles = [];
-        points.forEach(point => {
-            const circle = L.circle(point, {
-                radius: 375,
-                className: 'circle-style'
-            }).addTo(map);
-            
-            circles.push(circle);
-        });
+const circles = [];
+points.forEach(point => {
+    const circle = L.circle(point, {
+        radius: 375,
+        className: 'circle-style'
+    }).addTo(map);
+    
+    circles.push(circle);
+});
 
+// Добавление маркеров для точек
+points.forEach(point => {
+    L.marker(point).addTo(map);
+});
+        
+        
+        
         let userMarker;
         let userCircle;
         const header = document.getElementById('mainHeader');
