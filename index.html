@@ -181,7 +181,7 @@ body::before {
     <div class="container">
         <header id="mainHeader">
             <h1>Картографический мониторинг</h1>
-            <p>Зоны охвата с радиусом 100 метров</p>
+            <p>Зоны охвата с радиусом 250 метров</p>
             <button id="locateBtn">📍 Найти меня</button>
         </header>
 
@@ -351,7 +351,7 @@ const points = [
 const circles = [];
 points.forEach(point => {
     const circle = L.circle(point, {
-        radius: 100,
+        radius: 250,
         className: 'circle-style'
     }).addTo(map);
     
