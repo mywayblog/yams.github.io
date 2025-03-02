@@ -342,7 +342,7 @@ const points = [
 
 
         
-        const map = L.map('map').setView(points[0], 14);
+        const map = L.map('map').setView(points[40], 9);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
@@ -422,7 +422,7 @@ if (inZone) {
     alarmSound.currentTime = 0;
 }
 
-            map.setView(userLatLng, 16);
+            // map.setView(userLatLng, 16);
         });
 
         map.on('locationerror', (e) => {
