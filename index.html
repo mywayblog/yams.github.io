@@ -172,33 +172,31 @@ body::before {
         .triangle-icon:hover {
             transform: rotate(180deg);
         }
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 1rem;
+}
 
+#followBtn, #unfollowBtn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#unfollowBtn {
+    background: #e74c3c;
+}
+
+.hidden {
+    display: none;
+}
             /* Стиль маркеров точек */
-
-
-                        .button-group {
-                display: flex;
-                gap: 10px;
-                margin-top: 1rem;
-            }
-            
-            #centerBtn {
-                background: #27ae60;
-                padding: 0.8rem 1.5rem;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            }
-            
-            #centerBtn:hover {
-                background: #219653;
-            }
-            
-            .hidden {
-                display: none;
-            }
     </style>
     
 </head>
@@ -209,7 +207,8 @@ body::before {
             <p>Зоны охвата с радиусом 250 метров</p>
             <div class="button-group">
                 <button id="locateBtn">📍 Найти меня</button>
-                <button id="centerBtn" class="hidden">🎯 На меня</button>
+                <button id="followBtn" class="hidden">cams Наблюдать за мной</button>
+                <button id="unfollowBtn" class="hidden">🔓 Отвязать камеру</button>
             </div>
         </header>
 
@@ -220,8 +219,6 @@ body::before {
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-                let userLatLng = null;
-
 const points = [
     [56.375210, 38.110526],
     [56.375704, 38.109996],
@@ -374,6 +371,10 @@ const points = [
         
         const map = L.map('map').setView(points[40], 9);
 
+
+
+
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -413,19 +414,35 @@ alarmSound.loop = true;
         });
 
 
-        // Добавьте обработчик для новой кнопки
-        document.getElementById('centerBtn').addEventListener('click', () => {
-            if (userLatLng) {
-                map.setView(userLatLng, 16);
-            } else {
-                alert('Местоположение еще не определено');
+
+        let isFollowing = false;
+        let lastUserLatLng = null;
+
+        // Добавляем обработчики для новых кнопок
+        document.getElementById('followBtn').addEventListener('click', () => {
+            if (lastUserLatLng) {
+                isFollowing = true;
+                map.setView(lastUserLatLng, 16);
+                toggleFollowButtons();
             }
         });
 
-        map.on('locationfound', (e) => {
-            userLatLng = e.latlng; // Сохраняем позицию
-            const radius = e.accuracy / 2;
+        document.getElementById('unfollowBtn').addEventListener('click', () => {
+            isFollowing = false;
+            toggleFollowButtons();
+        });
 
+        // Функция для переключения видимости кнопок
+        function toggleFollowButtons() {
+            const followBtn = document.getElementById('followBtn');
+            const unfollowBtn = document.getElementById('unfollowBtn');
+            followBtn.classList.toggle('hidden');
+            unfollowBtn.classList.toggle('hidden');
+        }
+
+        map.on('locationfound', (e) => {
+            const radius = e.accuracy / 2;
+            const userLatLng = e.latlng;
 
             if (userMarker) map.removeLayer(userMarker);
             if (userCircle) map.removeLayer(userCircle);
@@ -462,8 +479,16 @@ if (inZone) {
     alarmSound.pause();
     alarmSound.currentTime = 0;
 }
-            document.getElementById('centerBtn').classList.remove('hidden');
+
+            // Сохраняем последние координаты
+            lastUserLatLng = userLatLng;
+
+            // Добавляем условие слежения
+            if (isFollowing) {
+                map.setView(userLatLng, 16);
+            }
         });
+
 
         map.on('locationerror', (e) => {
             alert('Не удалось определить местоположение');
