@@ -174,6 +174,31 @@ body::before {
         }
 
             /* Стиль маркеров точек */
+
+
+                        .button-group {
+                display: flex;
+                gap: 10px;
+                margin-top: 1rem;
+            }
+            
+            #centerBtn {
+                background: #27ae60;
+                padding: 0.8rem 1.5rem;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: 0.3s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            
+            #centerBtn:hover {
+                background: #219653;
+            }
+            
+            .hidden {
+                display: none;
+            }
     </style>
     
 </head>
@@ -182,7 +207,10 @@ body::before {
         <header id="mainHeader">
             <h1>Картографический мониторинг</h1>
             <p>Зоны охвата с радиусом 250 метров</p>
-            <button id="locateBtn">📍 Найти меня</button>
+            <div class="button-group">
+                <button id="locateBtn">📍 Найти меня</button>
+                <button id="centerBtn" class="hidden">🎯 На меня</button>
+            </div>
         </header>
 
         <div class="map-container">
@@ -192,6 +220,8 @@ body::before {
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+                let userLatLng = null;
+
 const points = [
     [56.375210, 38.110526],
     [56.375704, 38.109996],
@@ -382,9 +412,20 @@ alarmSound.loop = true;
             });
         });
 
+
+        // Добавьте обработчик для новой кнопки
+        document.getElementById('centerBtn').addEventListener('click', () => {
+            if (userLatLng) {
+                map.setView(userLatLng, 16);
+            } else {
+                alert('Местоположение еще не определено');
+            }
+        });
+
         map.on('locationfound', (e) => {
+            userLatLng = e.latlng; // Сохраняем позицию
             const radius = e.accuracy / 2;
-            const userLatLng = e.latlng;
+
 
             if (userMarker) map.removeLayer(userMarker);
             if (userCircle) map.removeLayer(userCircle);
@@ -421,8 +462,7 @@ if (inZone) {
     alarmSound.pause();
     alarmSound.currentTime = 0;
 }
-
-            // map.setView(userLatLng, 16);
+            document.getElementById('centerBtn').classList.remove('hidden');
         });
 
         map.on('locationerror', (e) => {
