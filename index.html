@@ -202,12 +202,12 @@ body::before {
     <div class="container">
         <header id="mainHeader">
             <h1>АнтиЯм РФ</h1>
-<h3>by Sergey's Corp. inc.</h3>
-            <p>Зоны охвата с радиусом 250 метров</p>
+<h3>by Sergey Corp. inc.</h3>
+            <p>Сигнализации о приближающейся яме за 250 метров</p>
             <div class="button-group">
-                <button id="locateBtn">📍 Найти меня</button>
-                <button id="followBtn" class="hidden">cams Наблюдать за мной</button>
-                <button id="unfollowBtn" class="hidden">🔓 Отвязать камеру</button>
+                <button id="locateBtn">📍 Начало работы</button>
+                <button id="followBtn" class="hidden">Закрепить на мне</button>
+                <button id="unfollowBtn" class="hidden">🔓 Отвязать от меня</button>
             </div>
         </header>
 
@@ -400,7 +400,7 @@ let userCircle;
 const header = document.getElementById('mainHeader');
 
 // Добавьте здесь
-const alarmSound = new Audio('https://github.com/mywayblog/yams.github.io/raw/refs/heads/main/b08bddbbb1325c4.mp3');
+const alarmSound = new Audio('https://github.com/mywayblog/yams.github.io/raw/refs/heads/main/output_out.mp3');
 alarmSound.loop = true;
 
         document.getElementById('locateBtn').addEventListener('click', () => {
