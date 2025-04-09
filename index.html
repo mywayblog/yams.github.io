@@ -201,7 +201,7 @@ body::before {
 <body>
     <div class="container">
         <header id="mainHeader">
-            <h1>АнтиЯм РФ v.1.4</h1>
+            <h1>АнтиЯм РФ v.1.5</h1>
 <h3>by Sergey Corp. inc.</h3>
             <p>Предупреждаю о приближающейся яме за 50 метров</p>
             <div class="button-group">
@@ -537,8 +537,8 @@ function playSoundCycle() {
     const gainNode = audioContext.createGain();
     
     oscillator.type = 'sine'; // Тип волны
-    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Частота 440 Гц
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Громкость 10%
+    oscillator.frequency.setValueAtTime(1500, audioContext.currentTime); // Частота 440 Гц
+    gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Громкость 10%
     
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
@@ -627,10 +627,10 @@ map.on('locationfound', (e) => {
     }
 });
 
-map.on('locationerror', (e) => {
-    alert('Не удалось определить местоположение');
-    console.error(e);
-});
+// map.on('locationerror', (e) => {
+    // alert('Не удалось определить местоположение');
+    // console.error(e);
+// });
     </script>
 </body>
 </html>
