@@ -491,17 +491,10 @@ const points = [
 ];
 
 
-
-        
-        const map = L.map('map').setView(points[40], 9);
-
-
-
-
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+const map = L.map('map').setView(points[0], 9); // Исправлено points[40] на points[0], так как индекс 40 выходил за пределы массива
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
 const circles = [];
 points.forEach(point => {
@@ -509,7 +502,6 @@ points.forEach(point => {
         radius: 50,
         className: 'circle-style'
     }).addTo(map);
-    
     circles.push(circle);
 });
 
@@ -517,107 +509,128 @@ points.forEach(point => {
 points.forEach(point => {
     L.marker(point).addTo(map);
 });
-        
-        
-        
+
 let userMarker;
 let userCircle;
 const header = document.getElementById('mainHeader');
 
-// Добавьте здесь
-const alarmSound = new Audio('https://github.com/mywayblog/yams.github.io/raw/refs/heads/main/output_out.mp3');
-alarmSound.loop = true;
+// Инициализация AudioContext
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let isPlaying = false;
+let soundInterval;
 
-        document.getElementById('locateBtn').addEventListener('click', () => {
-            map.locate({
-                watch: true,
-                enableHighAccuracy: true,
-                maximumAge: 10000,
-                timeout: 10000
-            });
-        });
-
-
-
-        let isFollowing = false;
-        let lastUserLatLng = null;
-
-        // Добавляем обработчики для новых кнопок
-        document.getElementById('followBtn').addEventListener('click', () => {
-            if (lastUserLatLng) {
-                isFollowing = true;
-                map.setView(lastUserLatLng, 16);
-                toggleFollowButtons();
-            }
-        });
-
-        document.getElementById('unfollowBtn').addEventListener('click', () => {
-            isFollowing = false;
-            toggleFollowButtons();
-        });
-
-        // Функция для переключения видимости кнопок
-        function toggleFollowButtons() {
-            const followBtn = document.getElementById('followBtn');
-            const unfollowBtn = document.getElementById('unfollowBtn');
-            followBtn.classList.toggle('hidden');
-            unfollowBtn.classList.toggle('hidden');
-        }
-
-        map.on('locationfound', (e) => {
-            const radius = e.accuracy / 2;
-            const userLatLng = e.latlng;
-
-            if (userMarker) map.removeLayer(userMarker);
-            if (userCircle) map.removeLayer(userCircle);
-
-            userMarker = L.marker(userLatLng, {
-                icon: L.divIcon({
-                    className: 'user-location-icon',
-                    html: '<div class="triangle-icon"></div>',
-                    iconSize: [40, 40],        // Размер 40x40
-                    iconAnchor: [20, 20]       // Точка привязки (центр-центр)
-                })
-            }).addTo(map).bindPopup('Ваше текущее местоположение');
-
-            userCircle = L.circle(userLatLng, {
-                radius: radius,
-                className: 'user-location'
-            }).addTo(map);
-
-            let inZone = false;
-            circles.forEach(circle => {
-                if (circle.getBounds().contains(userLatLng)) {
-                    inZone = true;
-                }
-            });
-// Управление миганием и звуком
-if (inZone) {
-    header.classList.add('blink');
-    document.body.classList.add('blink-border');
-    if (!alarmSound.paused) return;
-    alarmSound.play().catch(err => console.log('Звук заблокирован браузером'));
-} else {
-    header.classList.remove('blink');
-    document.body.classList.remove('blink-border');
-    alarmSound.pause();
-    alarmSound.currentTime = 0;
+// Функция для воспроизведения звука (1 сек звук, 2 сек пауза)
+function toggleZoneSound(enable) {
+    if (enable && !isPlaying) {
+        isPlaying = true;
+        playSoundCycle();
+        soundInterval = setInterval(playSoundCycle, 3000); // Цикл каждые 3 секунды (1+2)
+    } else if (!enable && isPlaying) {
+        isPlaying = false;
+        clearInterval(soundInterval);
+    }
 }
 
-            // Сохраняем последние координаты
-            lastUserLatLng = userLatLng;
+// Функция создания и воспроизведения звука
+function playSoundCycle() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sine'; // Тип волны
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Частота 440 Гц
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Громкость 10%
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
+}
 
-            // Добавляем условие слежения
-            if (isFollowing) {
-                map.setView(userLatLng, 16);
-            }
-        });
+document.getElementById('locateBtn').addEventListener('click', () => {
+    map.locate({
+        watch: true,
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 10000
+    });
+});
 
+let isFollowing = false;
+let lastUserLatLng = null;
 
-        map.on('locationerror', (e) => {
-            alert('Не удалось определить местоположение');
-            console.error(e);
-        });
+// Добавляем обработчики для новых кнопок
+document.getElementById('followBtn').addEventListener('click', () => {
+    if (lastUserLatLng) {
+        isFollowing = true;
+        map.setView(lastUserLatLng, 16);
+        toggleFollowButtons();
+    }
+});
+
+document.getElementById('unfollowBtn').addEventListener('click', () => {
+    isFollowing = false;
+    toggleFollowButtons();
+});
+
+// Функция для переключения видимости кнопок
+function toggleFollowButtons() {
+    const followBtn = document.getElementById('followBtn');
+    const unfollowBtn = document.getElementById('unfollowBtn');
+    followBtn.classList.toggle('hidden');
+    unfollowBtn.classList.toggle('hidden');
+}
+
+map.on('locationfound', (e) => {
+    const radius = e.accuracy / 2;
+    const userLatLng = e.latlng;
+    if (userMarker) map.removeLayer(userMarker);
+    if (userCircle) map.removeLayer(userCircle);
+    
+    userMarker = L.marker(userLatLng, {
+        icon: L.divIcon({
+            className: 'user-location-icon',
+            html: '<div class="triangle-icon"></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        })
+    }).addTo(map).bindPopup('Ваше текущее местоположение');
+    
+    userCircle = L.circle(userLatLng, {
+        radius: radius,
+        className: 'user-location'
+    }).addTo(map);
+    
+    let inZone = false;
+    circles.forEach(circle => {
+        if (circle.getBounds().contains(userLatLng)) {
+            inZone = true;
+        }
+    });
+
+    // Управление миганием и звуком
+    if (inZone) {
+        header.classList.add('blink');
+        document.body.classList.add('blink-border');
+        toggleZoneSound(true); // Включаем звук
+    } else {
+        header.classList.remove('blink');
+        document.body.classList.remove('blink-border');
+        toggleZoneSound(false); // Выключаем звук
+    }
+
+    // Сохраняем последние координаты
+    lastUserLatLng = userLatLng;
+    // Добавляем условие слежения
+    if (isFollowing) {
+        map.setView(userLatLng, 16);
+    }
+});
+
+map.on('locationerror', (e) => {
+    alert('Не удалось определить местоположение');
+    console.error(e);
+});
     </script>
 </body>
 </html>
