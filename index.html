@@ -201,7 +201,7 @@ body::before {
 <body>
     <div class="container">
         <header id="mainHeader">
-            <h1>АнтиЯм РФ v.1.2</h1>
+            <h1>АнтиЯм РФ v.1.4</h1>
 <h3>by Sergey Corp. inc.</h3>
             <p>Предупреждаю о приближающейся яме за 50 метров</p>
             <div class="button-group">
@@ -491,7 +491,7 @@ const points = [
 ];
 
 
-const map = L.map('map').setView(points[40], 16); // Исправлено points[40] на points[0], так как индекс 40 выходил за пределы массива
+const map = L.map('map').setView(points[40], 9); // Исправлено points[40] на points[0], так как индекс 40 выходил за пределы массива
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
