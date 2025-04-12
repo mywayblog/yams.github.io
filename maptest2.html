@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Картографический мониторинг</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Основные стили -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+        /* Белый ободок */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 15px solid white;
+            pointer-events: none;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            z-index: 1;
+        }
+        header {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            transition: background 0.3s;
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1001;
+        }
+        /* Анимация мигания для header */
+        @keyframes blink {
+            0% { background: #ff4444; }
+            50% { background: #2c3e50; }
+            100% { background: #ff4444; }
+        }
+        /* Анимация мигания для ободка */
+        @keyframes border-blink {
+            0% { border-color: #ff4444; }
+            50% { border-color: white; }
+            100% { border-color: #ff4444; }
+        }
+        /* Состояние мигания */
+        .blink {
+            animation: blink 0.5s infinite;
+        }
+        body.blink-border::before {
+            animation: border-blink 0.5s infinite;
+        }
+        /* Остальные стили */
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        header p {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        #locateBtn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            align-self: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        #locateBtn:hover {
+            background: #2980b9;
+        }
+        .map-container {
+            flex: 0 0 70%;
+            position: relative;
+            overflow: hidden;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .circle-style {
+            color: #e74c3c;
+            fillOpacity: 0.2;
+            weight: 2;
+        }
+        .user-location {
+            color: #2ecc71 !important;
+            fillOpacity: 0.3;
+        }
+        @media (max-width: 768px) {
+            header {
+                flex: 0 0 auto;
+                padding: 1rem 0.5rem;
+            }
+            header h1 {
+                font-size: 1.5rem;
+            }
+            header p {
+                font-size: 0.9rem;
+            }
+            .map-container {
+                flex: 1;
+            }
+        }
+        /* Стиль треугольника */
+        .triangle-icon {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 40px solid red;
+            margin: auto;
+            transform: rotate(0deg);
+            transition: transform 0.3s;
+            box-shadow: 0 0 0 4px black;
+        }
+        /* Анимация поворота при наведении */
+        .triangle-icon:hover {
+            transform: rotate(180deg);
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        #followBtn, #unfollowBtn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        #unfollowBtn {
+            background: #e74c3c;
+        }
+        /* Стили для спидометра и регулятора громкости */
+        .speedometer {
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            font-size: 14px;
+        }
+        .volume-control {
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .volume-slider {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header id="mainHeader">
+            <h1>АнтиЯм РФ v.1.6</h1>
+            <h3>by Sergey Corp. inc.</h3>
+            <p>Предупреждаю о приближающейся яме за 4 секунды</p>
+            <div class="button-group">
+                <button id="locateBtn">📍 Начало работы</button>
+                <button id="followBtn" class="hidden">Закрепить на мне</button>
+                <button id="unfollowBtn" class="hidden">🔓 Отвязать от меня</button>
+            </div>
+        </header>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Список точек (меток) на карте
+        const points = [
+            [56.37520976924318, 38.11052606949235],
+            [56.37570399897738, 38.10999560111929],
+            [56.4195449, 38.097684],
+            [56.4135964, 38.101802],
+            [56.4076005, 38.1047726]
+        ];
+
+        // Инициализация карты
+        const map = L.map('map').setView(points[0], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Создание окружностей и маркеров
+        const circles = [];
+        const pointsLatLng = points.map(p => L.latLng(p[0], p[1]));
+        pointsLatLng.forEach(point => {
+            const circle = L.circle(point, {
+                radius: 112, // Фиксированный радиус для отображения
+                className: 'circle-style'
+            }).addTo(map);
+            circles.push(circle);
+            L.marker(point).addTo(map);
+        });
+
+        // Переменные для пользователя
+        let userMarker;
+        let userCircle;
+        const header = document.getElementById('mainHeader');
+
+        // Инициализация звука
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let isPlaying = false;
+        let soundInterval;
+        let volume = 50; // Начальная громкость 50%
+
+        // Функция управления звуком
+        function toggleZoneSound(enable) {
+            if (enable && !isPlaying) {
+                isPlaying = true;
+                playSoundCycle();
+                soundInterval = setInterval(playSoundCycle, 3000);
+            } else if (!enable && isPlaying) {
+                isPlaying = false;
+                clearInterval(soundInterval);
+            }
+        }
+
+        // Функция воспроизведения звука
+        function playSoundCycle() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(volume / 100, audioContext.currentTime); // Громкость от 0 до 1
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+        }
+
+        // Спидометр
+        const speedometer = L.control({position: 'bottomright'});
+        speedometer.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'speedometer');
+            this._div.innerHTML = 'Скорость: 0 м/с';
+            return this._div;
+        };
+        speedometer.addTo(map);
+
+        // Регулятор громкости
+        const volumeControl = L.control({position: 'bottomleft'});
+        volumeControl.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'volume-control');
+            this._input = L.DomUtil.create('input', 'volume-slider', this._div);
+            this._input.type = 'range';
+            this._input.min = '0';
+            this._input.max = '100';
+            this._input.value = '50';
+            L.DomEvent.on(this._input, 'input', (e) => {
+                volume = e.target.value; // Обновляем громкость
+            });
+            return this._div;
+        };
+        volumeControl.addTo(map);
+
+        // Кнопка "Начало работы"
+        document.getElementById('locateBtn').addEventListener('click', () => {
+            map.locate({
+                watch: true,
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 10000
+            });
+        });
+
+        // Переменные для слежения
+        let isFollowing = false;
+        let lastUserLatLng = null;
+
+        // Кнопки "Закрепить" и "Отвязать"
+        document.getElementById('followBtn').addEventListener('click', () => {
+            if (lastUserLatLng) {
+                isFollowing = true;
+                map.setView(lastUserLatLng, 16);
+                toggleFollowButtons();
+            }
+        });
+
+        document.getElementById('unfollowBtn').addEventListener('click', () => {
+            isFollowing = false;
+            toggleFollowButtons();
+        });
+
+        // Переключение видимости кнопок
+        function toggleFollowButtons() {
+            const followBtn = document.getElementById('followBtn');
+            const unfollowBtn = document.getElementById('unfollowBtn');
+            followBtn.classList.toggle('hidden');
+            unfollowBtn.classList.toggle('hidden');
+        }
+
+        // Обработка местоположения
+        map.on('locationfound', (e) => {
+            const radius = e.accuracy / 2;
+            const userLatLng = e.latlng;
+
+            // Обновляем маркер и круг пользователя
+            if (userMarker) map.removeLayer(userMarker);
+            if (userCircle) map.removeLayer(userCircle);
+            userMarker = L.marker(userLatLng, {
+                icon: L.divIcon({
+                    className: 'user-location-icon',
+                    html: '<div class="triangle-icon"></div>',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20]
+                })
+            }).addTo(map).bindPopup('Ваше текущее местоположение');
+            userCircle = L.circle(userLatLng, {
+                radius: radius,
+                className: 'user-location'
+            }).addTo(map);
+
+            // Получаем скорость и обновляем спидометр
+            const speed = e.speed ? e.speed : 0;
+            speedometer._div.innerHTML = `Скорость: ${speed.toFixed(2)} м/с`;
+
+            // Расчёт расстояния для уведомления (скорость × 4 секунды)
+            const notificationDistance = speed * 4;
+            let inZone = false;
+
+            // Проверяем расстояние до каждой метки
+            pointsLatLng.forEach(point => {
+                const distance = userLatLng.distanceTo(point);
+                if (distance <= notificationDistance) {
+                    inZone = true;
+                }
+            });
+
+            // Включаем/выключаем уведомление
+            if (inZone) {
+                header.classList.add('blink');
+                document.body.classList.add('blink-border');
+                toggleZoneSound(true);
+            } else {
+                header.classList.remove('blink');
+                document.body.classList.remove('blink-border');
+                toggleZoneSound(false);
+            }
+
+            // Обновляем координаты и слежение
+            lastUserLatLng = userLatLng;
+            if (isFollowing) {
+                map.setView(userLatLng, 16);
+            }
+        });
+    </script>
+</body>
+</html>
