@@ -4,11 +4,8 @@
     <title>Картографический мониторинг</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    
     <!-- Основные стили -->
     <style>
         * {
@@ -16,7 +13,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -25,7 +21,6 @@
             height: 100vh;
             position: relative;
         }
-
 /* Белый ободок */
 body::before {
     content: '';
@@ -39,14 +34,12 @@ body::before {
     z-index: 1000;
     box-sizing: border-box;
 }
-
         .container {
             display: flex;
             flex-direction: column;
             height: 100%;
             z-index: 1;
         }
-
         header {
             background: #2c3e50;
             color: white;
@@ -60,41 +53,34 @@ body::before {
             position: relative;
             z-index: 1001;
         }
-        
         /* Анимация мигания для header */
         @keyframes blink {
             0% { background: #ff4444; }
             50% { background: #2c3e50; }
             100% { background: #ff4444; }
         }
-
         /* Анимация мигания для ободка */
         @keyframes border-blink {
             0% { border-color: #ff4444; }
             50% { border-color: white; }
             100% { border-color: #ff4444; }
         }
-
         /* Состояние мигания */
         .blink {
             animation: blink 0.5s infinite;
         }
-
         body.blink-border::before {
             animation: border-blink 0.5s infinite;
         }
-
         /* Остальные стили остаются без изменений */
         header h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-
         header p {
             font-size: 1rem;
             margin-bottom: 1rem;
         }
-
         #locateBtn {
             background: #3498db;
             color: white;
@@ -106,53 +92,43 @@ body::before {
             align-self: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-
         #locateBtn:hover {
             background: #2980b9;
         }
-
         .map-container {
             flex: 0 0 70%;
             position: relative;
             overflow: hidden;
         }
-
         #map {
             width: 100%;
             height: 100%;
         }
-
         .circle-style {
             color: #e74c3c;
             fillOpacity: 0.2;
             weight: 2;
         }
-
         .user-location {
             color: #2ecc71 !important;
             fillOpacity: 0.3;
         }
-
         @media (max-width: 768px) {
             header {
                 flex: 0 0 auto;
                 padding: 1rem 0.5rem;
             }
-
             header h1 {
                 font-size: 1.5rem;
             }
-
             header p {
                 font-size: 0.9rem;
             }
-
             .map-container {
                 flex: 1;
             }
         }
     </style>
-
         <style>
         /* Стиль треугольника */
         .triangle-icon {
@@ -165,9 +141,7 @@ body::before {
             transform: rotate(0deg);
             transition: transform 0.3s;
                 box-shadow: 0 0 0 4px black; /* Черная обводка */
-
         }
-        
         /* Анимация поворота при наведении */
         .triangle-icon:hover {
             transform: rotate(180deg);
@@ -177,7 +151,6 @@ body::before {
     gap: 10px;
     margin-top: 1rem;
 }
-
 #followBtn, #unfollowBtn {
     background: #27ae60;
     color: white;
@@ -188,15 +161,11 @@ body::before {
     transition: 0.3s;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
 #unfollowBtn {
     background: #e74c3c;
 }
-
-
             /* Стиль маркеров точек */
     </style>
-    
 </head>
 <body>
     <div class="container">
@@ -210,12 +179,10 @@ body::before {
                 <button id="unfollowBtn" class="hidden">🔓 Отвязать от меня</button>
             </div>
         </header>
-
         <div class="map-container">
             <div id="map"></div>
         </div>
     </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
 const points = [
@@ -487,15 +454,11 @@ const points = [
 [56.4195449, 38.097684],
 [56.4135964, 38.101802],
 [56.4076005, 38.1047726]
-
 ];
-
-
 const map = L.map('map').setView(points[40], 9); // Исправлено points[40] на points[0], так как индекс 40 выходил за пределы массива
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
-
 const circles = [];
 points.forEach(point => {
     const circle = L.circle(point, {
@@ -504,21 +467,17 @@ points.forEach(point => {
     }).addTo(map);
     circles.push(circle);
 });
-
 // Добавление маркеров для точек
 points.forEach(point => {
     L.marker(point).addTo(map);
 });
-
 let userMarker;
 let userCircle;
 const header = document.getElementById('mainHeader');
-
 // Инициализация AudioContext
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let isPlaying = false;
 let soundInterval;
-
 // Функция для воспроизведения звука (1 сек звук, 2 сек пауза)
 function toggleZoneSound(enable) {
     if (enable && !isPlaying) {
@@ -530,23 +489,18 @@ function toggleZoneSound(enable) {
         clearInterval(soundInterval);
     }
 }
-
 // Функция создания и воспроизведения звука
 function playSoundCycle() {
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
     oscillator.type = 'sine'; // Тип волны
     oscillator.frequency.setValueAtTime(1500, audioContext.currentTime); // Частота 440 Гц
     gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // Громкость 10%
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
 }
-
 document.getElementById('locateBtn').addEventListener('click', () => {
     map.locate({
         watch: true,
@@ -555,10 +509,8 @@ document.getElementById('locateBtn').addEventListener('click', () => {
         timeout: 10000
     });
 });
-
 let isFollowing = false;
 let lastUserLatLng = null;
-
 // Добавляем обработчики для новых кнопок
 document.getElementById('followBtn').addEventListener('click', () => {
     if (lastUserLatLng) {
@@ -567,12 +519,10 @@ document.getElementById('followBtn').addEventListener('click', () => {
         toggleFollowButtons();
     }
 });
-
 document.getElementById('unfollowBtn').addEventListener('click', () => {
     isFollowing = false;
     toggleFollowButtons();
 });
-
 // Функция для переключения видимости кнопок
 function toggleFollowButtons() {
     const followBtn = document.getElementById('followBtn');
@@ -580,13 +530,11 @@ function toggleFollowButtons() {
     followBtn.classList.toggle('hidden');
     unfollowBtn.classList.toggle('hidden');
 }
-
 map.on('locationfound', (e) => {
     const radius = e.accuracy / 2;
     const userLatLng = e.latlng;
     if (userMarker) map.removeLayer(userMarker);
     if (userCircle) map.removeLayer(userCircle);
-    
     userMarker = L.marker(userLatLng, {
         icon: L.divIcon({
             className: 'user-location-icon',
@@ -595,19 +543,16 @@ map.on('locationfound', (e) => {
             iconAnchor: [20, 20]
         })
     }).addTo(map).bindPopup('Ваше текущее местоположение');
-    
     userCircle = L.circle(userLatLng, {
         radius: radius,
         className: 'user-location'
     }).addTo(map);
-    
     let inZone = false;
     circles.forEach(circle => {
         if (circle.getBounds().contains(userLatLng)) {
             inZone = true;
         }
     });
-
     // Управление миганием и звуком
     if (inZone) {
         header.classList.add('blink');
@@ -618,7 +563,6 @@ map.on('locationfound', (e) => {
         document.body.classList.remove('blink-border');
         toggleZoneSound(false); // Выключаем звук
     }
-
     // Сохраняем последние координаты
     lastUserLatLng = userLatLng;
     // Добавляем условие слежения
@@ -626,7 +570,6 @@ map.on('locationfound', (e) => {
         map.setView(userLatLng, 16);
     }
 });
-
 // map.on('locationerror', (e) => {
     // alert('Не удалось определить местоположение');
     // console.error(e);
