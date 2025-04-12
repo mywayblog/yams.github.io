@@ -201,9 +201,9 @@ body::before {
 <body>
     <div class="container">
         <header id="mainHeader">
-            <h1>АнтиЯм РФ v.1.5</h1>
+            <h1>АнтиЯм РФ v.1.6</h1>
 <h3>by Sergey Corp. inc.</h3>
-            <p>Предупреждаю о приближающейся яме за 50 метров</p>
+            <p>Предупреждаю о приближающейся яме за 112 метров</p>
             <div class="button-group">
                 <button id="locateBtn">📍 Начало работы</button>
                 <button id="followBtn" class="hidden">Закрепить на мне</button>
@@ -499,7 +499,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const circles = [];
 points.forEach(point => {
     const circle = L.circle(point, {
-        radius: 50,
+        radius: 112,
         className: 'circle-style'
     }).addTo(map);
     circles.push(circle);
@@ -538,7 +538,7 @@ function playSoundCycle() {
     
     oscillator.type = 'sine'; // Тип волны
     oscillator.frequency.setValueAtTime(1500, audioContext.currentTime); // Частота 440 Гц
-    gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Громкость 10%
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // Громкость 10%
     
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
