@@ -1,3 +1,3 @@
-# Проверяйте базу каждую неделю 
+# Ямы 
 
-# yams.github.io
+# https://mywayblog.github.io/yams.github.io/
