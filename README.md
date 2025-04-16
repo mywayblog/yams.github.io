@@ -1,5 +1,47 @@
-# Ямы 
+# Ямы
 
-# приложение https://play.google.com/store/apps/details?id=com.snc.test.webview2&hl=en с которого нужно зайти на сайт ниже 
+## Приложение
+Скачайте приложение по ссылке:  
+[![Google Play](https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.snc.test.webview2&hl=en)
 
-#  https://mywayblog.github.io/yams.github.io/
+## Сайт
+После установки приложения, зайдите на сайт:  
+[Перейти на сайт](https://mywayblog.github.io/yams.github.io/)
+
+---
+
+## Инструкция по использованию
+
+### Шаг 1
+Описание первого шага.  
+![Шаг 1](1.jpg)
+
+---
+
+### Шаг 2
+Описание второго шага.  
+![Шаг 2](2.jpg)
+
+---
+
+### Шаг 3
+Описание третьего шага.  
+![Шаг 3](3.jpg)
+
+---
+
+### Шаг 4
+Описание четвертого шага.  
+![Шаг 4](4.jpg)
+
+---
+
+### Шаг 5
+Описание пятого шага.  
+![Шаг 5](5.jpg)
+
+---
+
+### Шаг 6
+Описание шестого шага.  
+![Шаг 6](6.jpg)
