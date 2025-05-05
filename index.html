@@ -279,6 +279,15 @@
             border: 2px solid white;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
+        .green-marker-icon {
+    background-color: green;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
     </style>
 </head>
 <body>
@@ -690,6 +699,20 @@ const specialPoints = [
     [56.93770585990673, 38.09766836464405]
 ];
     
+ const specialPointColors = [
+    'green',   // Первая точка (индекс 0) - зеленая
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'green',   // Пятая точка (индекс 4) - зеленая
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red'      // Обычная красная точка
+];
         
         // Фиксированный радиус для специальных точек (был 200, теперь 321)
         const specialRadius = 321;
@@ -792,24 +815,26 @@ const specialPoints = [
         });
         
         // Создание специальных кругов с фиксированным радиусом
-        specialPoints.forEach(point => {
-            const circle = L.circle(point, {
-                radius: specialRadius, // Фиксированный радиус 321 метр
-                color: 'red',
-                fillColor: 'red',
-                fillOpacity: 0.2,
-                weight: 2
-            }).addTo(map);
-            specialCircles.push(circle);
-            
-            // Добавляем красные маркеры для специальных точек
-            L.marker(point, {
-                icon: L.divIcon({
-                    className: 'special-marker-icon',
-                    iconSize: [15, 15]
-                })
-            }).addTo(map);
-        });
+      specialPoints.forEach((point, index) => {
+    const pointColor = specialPointColors[index]; // Получаем цвет для текущей точки
+    
+    const circle = L.circle(point, {
+        radius: specialRadius, // Фиксированный радиус 321 метр
+        color: pointColor,
+        fillColor: pointColor,
+        fillOpacity: 0.2,
+        weight: 2
+    }).addTo(map);
+    specialCircles.push(circle);
+    
+    // Добавляем маркеры для специальных точек с соответствующим цветом
+    L.marker(point, {
+        icon: L.divIcon({
+            className: pointColor === 'green' ? 'green-marker-icon' : 'special-marker-icon',
+            iconSize: [15, 15]
+        })
+    }).addTo(map);
+});
         
         // Функция для расчета расстояния между двумя точками в метрах
         function calculateDistance(point1, point2) {
