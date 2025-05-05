@@ -293,7 +293,7 @@
 <body>
     <div class="container">
         <header id="mainHeader">
-            <h1>АнтиЯм РФ v.1.20</h1>
+            <h1>АнтиЯм РФ v.1.21</h1>
             <h3>by Sergey Corp. inc.</h3>
             <p id="warningText">Предупреждаю о приближающейся яме за <span id="alertDistance">112</span> метров</p>
             <div class="button-group">
@@ -710,12 +710,12 @@ const specialPoints = [
     'red',     // Обычная красная точка
     'red',     // Обычная красная точка
     'red',     // Обычная красная точка
-    'red',     // Обычная красная точка
-    'green'      // Обычная красная точка
+    'green',     // Обычная красная точка
+    'red'      // Обычная красная точка
 ];
         
         // Фиксированный радиус для специальных точек (был 200, теперь 321)
-        const specialRadius = 150;
+        const specialRadius = 123;
         
         const map = L.map('map').setView(points[0], 9);
         
