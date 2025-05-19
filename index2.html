@@ -713,109 +713,132 @@ const specialPoints = [
     'green',     // Обычная красная точка
     'red'      // Обычная красная точка
 ];
+// Фиксированный радиус для специальных точек (был 200, теперь 321)
+const specialRadius = 123;
+
+// Глобальная переменная для Wake Lock
+let wakeLock = null;
         
-        // Фиксированный радиус для специальных точек (был 200, теперь 321)
-        const specialRadius = 123;
+const map = L.map('map').setView(points[0], 9);
         
-        const map = L.map('map').setView(points[0], 9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+// Глобальные переменные для отслеживания состояния
+let circles = [];
+let specialCircles = []; // Круги для специальных точек
+let userMarker;
+let userCircle;
+let lastUserPosition = null;
+let lastPositionTimestamp = null;
+let currentSpeed = 0; // скорость в м/с
+let defaultRadius = 112; // начальный радиус в метрах
+let dynamicRadius = defaultRadius; // динамический радиус
+let isFollowing = false;
+let lastUserLatLng = null;
         
-        // Глобальные переменные для отслеживания состояния
-        let circles = [];
-        let specialCircles = []; // Круги для специальных точек
-        let userMarker;
-        let userCircle;
-        let lastUserPosition = null;
-        let lastPositionTimestamp = null;
-        let currentSpeed = 0; // скорость в м/с
-        let defaultRadius = 112; // начальный радиус в метрах
-        let dynamicRadius = defaultRadius; // динамический радиус
-        let isFollowing = false;
-        let lastUserLatLng = null;
+// Структура для хранения информации о расстояниях до точек
+let pointDistances = [];
+let specialPointDistances = []; // Для специальных точек
         
-        // Структура для хранения информации о расстояниях до точек
-        let pointDistances = [];
-        let specialPointDistances = []; // Для специальных точек
+// Инициализируем для каждой точки
+points.forEach((point, index) => {
+    pointDistances[index] = {
+        previousDistance: null,
+        currentDistance: null,
+        approaching: false
+    };
+});
         
-        // Инициализируем для каждой точки
-        points.forEach((point, index) => {
-            pointDistances[index] = {
-                previousDistance: null,
-                currentDistance: null,
-                approaching: false
-            };
-        });
+// Инициализируем для специальных точек
+specialPoints.forEach((point, index) => {
+    specialPointDistances[index] = {
+        previousDistance: null,
+        currentDistance: null,
+        approaching: false,
+        inZone: false
+    };
+});
         
-        // Инициализируем для специальных точек
-        specialPoints.forEach((point, index) => {
-            specialPointDistances[index] = {
-                previousDistance: null,
-                currentDistance: null,
-                approaching: false,
-                inZone: false
-            };
-        });
-        
-        // Инициализация AudioContext
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let isPlaying = false;
-        let isSpecialSoundPlaying = false; // Для специального звука
-        let soundInterval;
-        let specialSoundInterval; // Для специального звука
-        let volume = 0.5; // Значение громкости (0-1) для обычного звука
-        let specialVolume = 0.5; // Значение громкости (0-1) для специального звука
-        
-        // Обновление радиуса предупреждения на основе скорости
-        function updateDynamicRadius() {
-            // Если скорость 0, используем стандартный радиус
-            if (currentSpeed <= 0) {
-                dynamicRadius = defaultRadius;
-            } else {
-                // Вычисляем расстояние, которое пройдет пользователь за 4 секунды с текущей скоростью
-                // и добавляем базовый радиус для предупреждения
-                dynamicRadius = (currentSpeed * 4) + 10; 
-            }
+// Инициализация AudioContext
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let isPlaying = false;
+let isSpecialSoundPlaying = false; // Для специального звука
+let soundInterval;
+let specialSoundInterval; // Для специального звука
+let volume = 0.5; // Значение громкости (0-1) для обычного звука
+let specialVolume = 0.5; // Значение громкости (0-1) для специального звука
+
+// Функция для запроса блокировки выключения экрана
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock активирован');
             
-            // Обновляем текст в заголовке
-            document.getElementById('alertDistance').textContent = Math.round(dynamicRadius);
-            
-            // Обновляем радиусы всех обычных кругов
-            updateAllCircles();
-        }
-        
-        // Функция для обновления всех кругов на карте
-        function updateAllCircles() {
-            // Удаляем старые круги
-            circles.forEach(circle => map.removeLayer(circle));
-            circles = [];
-            
-            // Создаем новые круги с обновленным радиусом
-            points.forEach(point => {
-                const circle = L.circle(point, {
-                    radius: dynamicRadius,
-                    className: 'circle-style'
-                }).addTo(map);
-                circles.push(circle);
+            // Добавляем обработчик для переактивации wake lock после потери фокуса
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock был освобожден');
+                // Пытаемся переактивировать при потере фокуса
+                requestWakeLock();
             });
+        } else {
+            console.log('Wake Lock API не поддерживается в этом браузере');
         }
+    } catch (err) {
+        console.error(`Не удалось активировать Wake Lock: ${err.message}`);
+    }
+}
         
-        // Создание начальных кругов с базовым радиусом
-        points.forEach(point => {
-            const circle = L.circle(point, {
-                radius: defaultRadius,
-                className: 'circle-style'
-            }).addTo(map);
-            circles.push(circle);
-            
-            // Добавляем маркеры для точек
-            L.marker(point).addTo(map);
-        });
+// Обновление радиуса предупреждения на основе скорости
+function updateDynamicRadius() {
+    // Если скорость 0, используем стандартный радиус
+    if (currentSpeed <= 0) {
+        dynamicRadius = defaultRadius;
+    } else {
+        // Вычисляем расстояние, которое пройдет пользователь за 4 секунды с текущей скоростью
+        // и добавляем базовый радиус для предупреждения
+        dynamicRadius = (currentSpeed * 4) + 10; 
+    }
+    
+    // Обновляем текст в заголовке
+    document.getElementById('alertDistance').textContent = Math.round(dynamicRadius);
+    
+    // Обновляем радиусы всех обычных кругов
+    updateAllCircles();
+}
         
-        // Создание специальных кругов с фиксированным радиусом
-      specialPoints.forEach((point, index) => {
+// Функция для обновления всех кругов на карте
+function updateAllCircles() {
+    // Удаляем старые круги
+    circles.forEach(circle => map.removeLayer(circle));
+    circles = [];
+    
+    // Создаем новые круги с обновленным радиусом
+    points.forEach(point => {
+        const circle = L.circle(point, {
+            radius: dynamicRadius,
+            className: 'circle-style'
+        }).addTo(map);
+        circles.push(circle);
+    });
+}
+        
+// Создание начальных кругов с базовым радиусом
+points.forEach(point => {
+    const circle = L.circle(point, {
+        radius: defaultRadius,
+        className: 'circle-style'
+    }).addTo(map);
+    circles.push(circle);
+    
+    // Добавляем маркеры для точек
+    L.marker(point).addTo(map);
+});
+        
+// Создание специальных кругов с фиксированным радиусом
+specialPoints.forEach((point, index) => {
     const pointColor = specialPointColors[index]; // Получаем цвет для текущей точки
     
     const circle = L.circle(point, {
@@ -836,304 +859,313 @@ const specialPoints = [
     }).addTo(map);
 });
         
-        // Функция для расчета расстояния между двумя точками в метрах
-        function calculateDistance(point1, point2) {
-            // Используем встроенную функцию Leaflet для расчета расстояния
-            return point1.distanceTo(point2);
+// Функция для расчета расстояния между двумя точками в метрах
+function calculateDistance(point1, point2) {
+    // Используем встроенную функцию Leaflet для расчета расстояния
+    return point1.distanceTo(point2);
+}
+        
+// Функция для расчета скорости на основе двух последовательных положений
+function calculateSpeed(position1, position2, timestamp1, timestamp2) {
+    const distance = calculateDistance(position1, position2); // в метрах
+    const timeDiff = (timestamp2 - timestamp1) / 1000; // в секундах
+    
+    if (timeDiff > 0) {
+        return distance / timeDiff; // скорость в м/с
+    }
+    return 0;
+}
+        
+// Функция для обновления информации о направлении движения
+function updateDirectionInfo(userLatLng) {
+    let isApproachingAny = false;
+    
+    // Обновляем информацию о расстоянии для каждой обычной точки
+    points.forEach((point, index) => {
+        const pointLatLng = L.latLng(point[0], point[1]);
+        const distance = calculateDistance(userLatLng, pointLatLng);
+        
+        // Если есть предыдущее расстояние, определяем направление движения
+        if (pointDistances[index].currentDistance !== null) {
+            pointDistances[index].previousDistance = pointDistances[index].currentDistance;
         }
         
-        // Функция для расчета скорости на основе двух последовательных положений
-        function calculateSpeed(position1, position2, timestamp1, timestamp2) {
-            const distance = calculateDistance(position1, position2); // в метрах
-            const timeDiff = (timestamp2 - timestamp1) / 1000; // в секундах
+        pointDistances[index].currentDistance = distance;
+        
+        // Определяем, приближаемся ли мы к точке
+        if (pointDistances[index].previousDistance !== null) {
+            // Приближаемся, если текущее расстояние меньше предыдущего
+            pointDistances[index].approaching = pointDistances[index].currentDistance < pointDistances[index].previousDistance;
             
-            if (timeDiff > 0) {
-                return distance / timeDiff; // скорость в м/с
+            // Если приближаемся хотя бы к одной точке в радиусе действия, запоминаем это
+            if (pointDistances[index].approaching && pointDistances[index].currentDistance <= dynamicRadius) {
+                isApproachingAny = true;
             }
-            return 0;
+        }
+    });
+    
+    // Проверяем специальные точки
+    let isInSpecialZone = false;
+    
+    specialPoints.forEach((point, index) => {
+        const pointLatLng = L.latLng(point[0], point[1]);
+        const distance = calculateDistance(userLatLng, pointLatLng);
+        
+        // Если есть предыдущее расстояние, определяем направление движения
+        if (specialPointDistances[index].currentDistance !== null) {
+            specialPointDistances[index].previousDistance = specialPointDistances[index].currentDistance;
         }
         
-        // Функция для обновления информации о направлении движения
-        function updateDirectionInfo(userLatLng) {
-            let isApproachingAny = false;
-            
-            // Обновляем информацию о расстоянии для каждой обычной точки
-            points.forEach((point, index) => {
-                const pointLatLng = L.latLng(point[0], point[1]);
-                const distance = calculateDistance(userLatLng, pointLatLng);
-                
-                // Если есть предыдущее расстояние, определяем направление движения
-                if (pointDistances[index].currentDistance !== null) {
-                    pointDistances[index].previousDistance = pointDistances[index].currentDistance;
-                }
-                
-                pointDistances[index].currentDistance = distance;
-                
-                // Определяем, приближаемся ли мы к точке
-                if (pointDistances[index].previousDistance !== null) {
-                    // Приближаемся, если текущее расстояние меньше предыдущего
-                    pointDistances[index].approaching = pointDistances[index].currentDistance < pointDistances[index].previousDistance;
-                    
-                    // Если приближаемся хотя бы к одной точке в радиусе действия, запоминаем это
-                    if (pointDistances[index].approaching && pointDistances[index].currentDistance <= dynamicRadius) {
-                        isApproachingAny = true;
-                    }
-                }
-            });
-            
-            // Проверяем специальные точки
-            let isInSpecialZone = false;
-            
-            specialPoints.forEach((point, index) => {
-                const pointLatLng = L.latLng(point[0], point[1]);
-                const distance = calculateDistance(userLatLng, pointLatLng);
-                
-                // Если есть предыдущее расстояние, определяем направление движения
-                if (specialPointDistances[index].currentDistance !== null) {
-                    specialPointDistances[index].previousDistance = specialPointDistances[index].currentDistance;
-                }
-                
-                specialPointDistances[index].currentDistance = distance;
-                
-                // Определяем, находимся ли мы в зоне специальной точки
-                specialPointDistances[index].inZone = distance <= specialRadius;
-                
-                if (specialPointDistances[index].inZone) {
-                    isInSpecialZone = true;
-                }
-            });
-            
-            // Обновляем индикатор статуса
-            const statusIndicator = document.getElementById('statusIndicator');
-            statusIndicator.classList.remove('hidden');
-            
-            if (isApproachingAny) {
-                statusIndicator.textContent = "Приближение к метке";
-                statusIndicator.classList.add('status-approaching');
-                statusIndicator.classList.remove('status-moving-away');
-                return {
-                    approaching: true,
-                    inSpecialZone: isInSpecialZone
-                };
+        specialPointDistances[index].currentDistance = distance;
+        
+        // Определяем, находимся ли мы в зоне специальной точки
+        specialPointDistances[index].inZone = distance <= specialRadius;
+        
+        if (specialPointDistances[index].inZone) {
+            isInSpecialZone = true;
+        }
+    });
+    
+    // Обновляем индикатор статуса
+    const statusIndicator = document.getElementById('statusIndicator');
+    statusIndicator.classList.remove('hidden');
+    
+    if (isApproachingAny) {
+        statusIndicator.textContent = "Приближение к метке";
+        statusIndicator.classList.add('status-approaching');
+        statusIndicator.classList.remove('status-moving-away');
+        return {
+            approaching: true,
+            inSpecialZone: isInSpecialZone
+        };
+    } else {
+        statusIndicator.textContent = "Отдаление от меток";
+        statusIndicator.classList.remove('status-approaching');
+        statusIndicator.classList.add('status-moving-away');
+        return {
+            approaching: false,
+            inSpecialZone: isInSpecialZone
+        };
+    }
+}
+        
+// Функция для создания и воспроизведения обычного звука (1500 Гц)
+function playSoundCycle() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
+    
+    // Применяем текущую громкость
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
+}
+        
+// Функция для создания и воспроизведения специального звука (2000 Гц)
+function playSpecialSoundCycle() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(2000, audioContext.currentTime); // Частота 2000 Гц
+    
+    // Применяем текущую громкость для специального звука
+    gainNode.gain.setValueAtTime(specialVolume, audioContext.currentTime);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
+}
+        
+// Функция для включения/выключения обычного звука
+function toggleZoneSound(enable) {
+    if (enable && !isPlaying) {
+        isPlaying = true;
+        playSoundCycle();
+        soundInterval = setInterval(playSoundCycle, 3000); // Цикл каждые 3 секунды (1+2)
+    } else if (!enable && isPlaying) {
+        isPlaying = false;
+        clearInterval(soundInterval);
+    }
+}
+        
+// Функция для включения/выключения специального звука
+function toggleSpecialZoneSound(enable) {
+    if (enable && !isSpecialSoundPlaying) {
+        isSpecialSoundPlaying = true;
+        playSpecialSoundCycle();
+        specialSoundInterval = setInterval(playSpecialSoundCycle, 3000); // Цикл каждые 3 секунды (1+2)
+    } else if (!enable && isSpecialSoundPlaying) {
+        isSpecialSoundPlaying = false;
+        clearInterval(specialSoundInterval);
+    }
+}
+        
+// Обработчик события нахождения местоположения
+map.on('locationfound', (e) => {
+    const userLatLng = e.latlng;
+    const accuracy = e.accuracy / 2;
+    const timestamp = Date.now();
+    
+    // Показываем спидометр и регулятор громкости
+    document.getElementById('speedometer').classList.remove('hidden');
+    document.getElementById('volumeControls').classList.remove('hidden');
+    
+    // Рассчитываем скорость, если есть предыдущее положение
+    if (lastUserPosition && lastPositionTimestamp) {
+        currentSpeed = calculateSpeed(lastUserPosition, userLatLng, lastPositionTimestamp, timestamp);
+        
+        // Конвертируем м/с в км/ч для отображения
+        const speedKmh = (currentSpeed * 3.6).toFixed(1);
+        document.getElementById('speed').textContent = speedKmh;
+        
+        // Обновляем радиус на основе скорости
+        updateDynamicRadius();
+    }
+    
+    // Сохраняем текущее положение для следующего расчета
+    lastUserPosition = userLatLng;
+    lastPositionTimestamp = timestamp;
+    
+    // Обновляем маркер пользователя
+    if (userMarker) map.removeLayer(userMarker);
+    if (userCircle) map.removeLayer(userCircle);
+    
+    userMarker = L.marker(userLatLng, {
+        icon: L.divIcon({
+            className: 'user-location-icon',
+            html: '<div class="triangle-icon"></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        })
+    }).addTo(map).bindPopup('Ваше текущее местоположение');
+    
+    userCircle = L.circle(userLatLng, {
+        radius: accuracy,
+        className: 'user-location'
+    }).addTo(map);
+    
+    // Обновляем информацию о направлении движения и получаем флаги
+    const directionInfo = updateDirectionInfo(userLatLng);
+    
+    // Проверяем, находится ли пользователь в зоне предупреждения какой-либо обычной метки
+    let inZone = false;
+    circles.forEach(circle => {
+        if (circle.getBounds().contains(userLatLng)) {
+            inZone = true;
+        }
+    });
+    
+    // Управление миганием и звуком для обычных меток
+    const header = document.getElementById('mainHeader');
+    if (inZone && directionInfo.approaching) {
+        header.classList.add('blink');
+        document.body.classList.add('blink-border');
+        toggleZoneSound(true); // Включаем обычный звук
+    } else {
+        header.classList.remove('blink');
+        document.body.classList.remove('blink-border');
+        toggleZoneSound(false); // Выключаем обычный звук
+    }
+    
+    // Проверяем нахождение в зоне специальных точек и управляем специальным звуком
+    if (directionInfo.inSpecialZone) {
+        toggleSpecialZoneSound(true); // Включаем специальный звук
+    } else {
+        toggleSpecialZoneSound(false); // Выключаем специальный звук
+    }
+    
+    // Сохраняем последние координаты
+    lastUserLatLng = userLatLng;
+    
+    // Следуем за пользователем, если включено
+    if (isFollowing) {
+        map.setView(userLatLng, 16);
+    }
+});
+        
+// Обработчик ошибки геолокации
+map.on('locationerror', (e) => {
+    alert('Не удалось определить местоположение: ' + e.message);
+    console.error(e);
+});
+        
+// Обработчик кнопки начала работы
+document.getElementById('locateBtn').addEventListener('click', () => {
+    // Запрашиваем разрешение на использование геолокации, если требуется
+    if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+            if (result.state === 'granted') {
+                startTracking();
             } else {
-                statusIndicator.textContent = "Отдаление от меток";
-                statusIndicator.classList.remove('status-approaching');
-                statusIndicator.classList.add('status-moving-away');
-                return {
-                    approaching: false,
-                    inSpecialZone: isInSpecialZone
-                };
-            }
-        }
-        
-        // Функция для создания и воспроизведения обычного звука (1500 Гц)
-        function playSoundCycle() {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
-            
-            // Применяем текущую громкость
-            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
-        }
-        
-        // Функция для создания и воспроизведения специального звука (2000 Гц)
-        function playSpecialSoundCycle() {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(2000, audioContext.currentTime); // Частота 2000 Гц
-            
-            // Применяем текущую громкость для специального звука
-            gainNode.gain.setValueAtTime(specialVolume, audioContext.currentTime);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 1); // Длительность 1 секунда
-        }
-        
-        // Функция для включения/выключения обычного звука
-        function toggleZoneSound(enable) {
-            if (enable && !isPlaying) {
-                isPlaying = true;
-                playSoundCycle();
-                soundInterval = setInterval(playSoundCycle, 3000); // Цикл каждые 3 секунды (1+2)
-            } else if (!enable && isPlaying) {
-                isPlaying = false;
-                clearInterval(soundInterval);
-            }
-        }
-        
-        // Функция для включения/выключения специального звука
-        function toggleSpecialZoneSound(enable) {
-            if (enable && !isSpecialSoundPlaying) {
-                isSpecialSoundPlaying = true;
-                playSpecialSoundCycle();
-                specialSoundInterval = setInterval(playSpecialSoundCycle, 3000); // Цикл каждые 3 секунды (1+2)
-            } else if (!enable && isSpecialSoundPlaying) {
-                isSpecialSoundPlaying = false;
-                clearInterval(specialSoundInterval);
-            }
-        }
-        
-        // Обработчик события нахождения местоположения
-        map.on('locationfound', (e) => {
-            const userLatLng = e.latlng;
-            const accuracy = e.accuracy / 2;
-            const timestamp = Date.now();
-            
-            // Показываем спидометр и регулятор громкости
-            document.getElementById('speedometer').classList.remove('hidden');
-            document.getElementById('volumeControls').classList.remove('hidden');
-            
-            // Рассчитываем скорость, если есть предыдущее положение
-            if (lastUserPosition && lastPositionTimestamp) {
-                currentSpeed = calculateSpeed(lastUserPosition, userLatLng, lastPositionTimestamp, timestamp);
-                
-                // Конвертируем м/с в км/ч для отображения
-                const speedKmh = (currentSpeed * 3.6).toFixed(1);
-                document.getElementById('speed').textContent = speedKmh;
-                
-                // Обновляем радиус на основе скорости
-                updateDynamicRadius();
-            }
-            
-            // Сохраняем текущее положение для следующего расчета
-            lastUserPosition = userLatLng;
-            lastPositionTimestamp = timestamp;
-            
-            // Обновляем маркер пользователя
-            if (userMarker) map.removeLayer(userMarker);
-            if (userCircle) map.removeLayer(userCircle);
-            
-            userMarker = L.marker(userLatLng, {
-                icon: L.divIcon({
-                    className: 'user-location-icon',
-                    html: '<div class="triangle-icon"></div>',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20]
-                })
-            }).addTo(map).bindPopup('Ваше текущее местоположение');
-            
-            userCircle = L.circle(userLatLng, {
-                radius: accuracy,
-                className: 'user-location'
-            }).addTo(map);
-            
-            // Обновляем информацию о направлении движения и получаем флаги
-            const directionInfo = updateDirectionInfo(userLatLng);
-            
-            // Проверяем, находится ли пользователь в зоне предупреждения какой-либо обычной метки
-            let inZone = false;
-            circles.forEach(circle => {
-                if (circle.getBounds().contains(userLatLng)) {
-                    inZone = true;
-                }
-            });
-            
-            // Управление миганием и звуком для обычных меток
-            const header = document.getElementById('mainHeader');
-            if (inZone && directionInfo.approaching) {
-                header.classList.add('blink');
-                document.body.classList.add('blink-border');
-                toggleZoneSound(true); // Включаем обычный звук
-            } else {
-                header.classList.remove('blink');
-                document.body.classList.remove('blink-border');
-                toggleZoneSound(false); // Выключаем обычный звук
-            }
-            
-            // Проверяем нахождение в зоне специальных точек и управляем специальным звуком
-            if (directionInfo.inSpecialZone) {
-                toggleSpecialZoneSound(true); // Включаем специальный звук
-            } else {
-                toggleSpecialZoneSound(false); // Выключаем специальный звук
-            }
-            
-            // Сохраняем последние координаты
-            lastUserLatLng = userLatLng;
-            
-            // Следуем за пользователем, если включено
-            if (isFollowing) {
-                map.setView(userLatLng, 16);
-            }
-        });
-        
-        // Обработчик ошибки геолокации
-        map.on('locationerror', (e) => {
-            alert('Не удалось определить местоположение: ' + e.message);
-            console.error(e);
-        });
-        
-        // Обработчик кнопки начала работы
-        document.getElementById('locateBtn').addEventListener('click', () => {
-            // Запрашиваем разрешение на использование геолокации, если требуется
-            if (navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({ name: 'geolocation' }).then(result => {
-                    if (result.state === 'granted') {
-                        startTracking();
-                    } else {
-                        // Запрашиваем геолокацию, что вызовет запрос разрешения в браузере
-                        startTracking();
-                    }
-                });
-            } else {
-                // Для браузеров без API разрешений
+                // Запрашиваем геолокацию, что вызовет запрос разрешения в браузере
                 startTracking();
             }
         });
+    } else {
+        // Для браузеров без API разрешений
+        startTracking();
+    }
+});
         
-        // Функция начала отслеживания
-        function startTracking() {
-            // Разблокируем AudioContext (требуется для современных браузеров)
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            
-            // Начинаем отслеживание местоположения
-            map.locate({
-                watch: true,
-                enableHighAccuracy: true,
-                maximumAge: 2000,  // Уменьшено до 2 секунд для более точного отслеживания
-                timeout: 10000
-            });
-            
-            // Показываем кнопку следования
-            document.getElementById('followBtn').classList.remove('hidden');
-        }
+// Функция начала отслеживания
+function startTracking() {
+    // Запрашиваем блокировку экрана от выключения
+    requestWakeLock();
+    
+    // Разблокируем AudioContext (требуется для современных браузеров)
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    
+    // Начинаем отслеживание местоположения
+    map.locate({
+        watch: true,
+        enableHighAccuracy: true,
+        maximumAge: 2000,  // Уменьшено до 2 секунд для более точного отслеживания
+        timeout: 10000
+    });
+    
+    // Показываем кнопку следования
+    document.getElementById('followBtn').classList.remove('hidden');
+}
         
-        // Обработчики для кнопок следования
-        document.getElementById('followBtn').addEventListener('click', () => {
-            if (lastUserLatLng) {
-                isFollowing = true;
-                map.setView(lastUserLatLng, 16);
-                toggleFollowButtons();
-            }
-        });
+// Обработчики для кнопок следования
+document.getElementById('followBtn').addEventListener('click', () => {
+    if (lastUserLatLng) {
+        isFollowing = true;
+        map.setView(lastUserLatLng, 16);
+        toggleFollowButtons();
+    }
+});
         
-        document.getElementById('unfollowBtn').addEventListener('click', () => {
-            isFollowing = false;
-            toggleFollowButtons();
-        });
+document.getElementById('unfollowBtn').addEventListener('click', () => {
+    isFollowing = false;
+    toggleFollowButtons();
+});
         
-        // Переключение видимости кнопок
-        function toggleFollowButtons() {
-            const followBtn = document.getElementById('followBtn');
-            const unfollowBtn = document.getElementById('unfollowBtn');
-            followBtn.classList.toggle('hidden');
-            unfollowBtn.classList.toggle('hidden');
-        }
-        
+// Переключение видимости кнопок
+function toggleFollowButtons() {
+    const followBtn = document.getElementById('followBtn');
+    const unfollowBtn = document.getElementById('unfollowBtn');
+    followBtn.classList.toggle('hidden');
+    unfollowBtn.classList.toggle('hidden');
+}
+
+// Обработчик для восстановления wake lock при возвращении к приложению
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && wakeLock === null) {
+        requestWakeLock();
+    }
+});
        
 // Обработчик регулятора громкости для обычного звука
 document.getElementById('volumeSlider').addEventListener('input', (e) => {
@@ -1155,6 +1187,13 @@ window.addEventListener('beforeunload', () => {
     }
     if (isSpecialSoundPlaying) {
         clearInterval(specialSoundInterval);
+    }
+    
+    // Освобождаем wake lock при закрытии страницы
+    if (wakeLock) {
+        wakeLock.release().then(() => {
+            console.log('Wake Lock освобожден при закрытии страницы');
+        });
     }
 });
 
