@@ -163,6 +163,40 @@
         }
         .volume-control input {
             width: 100px;
+            margin-bottom: 10px;
+        }
+        /* Стиль для контейнера регуляторов громкости */
+        .volume-controls-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Стили для регуляторов громкости */
+        .volume-control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .volume-control-item:last-child {
+            margin-bottom: 0;
+        }
+        .volume-control-item label {
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .volume-control-item input {
+            width: 100%;
         }
         /* Стиль для индикатора статуса */
         .status-indicator {
@@ -245,12 +279,21 @@
             border: 2px solid white;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
+        .green-marker-icon {
+    background-color: green;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
     </style>
 </head>
 <body>
     <div class="container">
         <header id="mainHeader">
-            <h1>АнтиЯм РФ v.1.13</h1>
+            <h1>АнтиЯм РФ v.1.23</h1>
             <h3>by Sergey Corp. inc.</h3>
             <p id="warningText">Предупреждаю о приближающейся яме за <span id="alertDistance">112</span> метров</p>
             <div class="button-group">
@@ -266,10 +309,16 @@
                 <div class="speedometer-value" id="speed">0</div>
                 <div class="speedometer-label">км/ч</div>
             </div>
-            <!-- Регулятор громкости -->
-            <div class="volume-control hidden" id="volumeControl">
-                <label for="volumeSlider">Громкость</label>
-                <input type="range" id="volumeSlider" min="0" max="100" value="50">
+            <!-- Контейнер для регуляторов громкости -->
+            <div class="volume-controls-container hidden" id="volumeControls">
+                <div class="volume-control-item">
+                    <label for="volumeSlider">Громкость (1500 Гц)</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="0">
+                </div>
+                <div class="volume-control-item">
+                    <label for="specialVolumeSlider">Громкость (2000 Гц)</label>
+                    <input type="range" id="specialVolumeSlider" min="0" max="100" value="20">
+                </div>
             </div>
             <!-- Индикатор статуса движения -->
             <div class="status-indicator hidden" id="statusIndicator">Статус</div>
@@ -650,6 +699,24 @@ const specialPoints = [
     [56.93770585990673, 38.09766836464405]
 ];
     
+ const specialPointColors = [
+    'green',   // Первая точка (индекс 0) - зеленая
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',   // Пятая точка (индекс 4) - зеленая
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'red',     // Обычная красная точка
+    'green',     // Обычная красная точка
+    'red'      // Обычная красная точка
+];
+        
+        // Фиксированный радиус для специальных точек (был 200, теперь 321)
+        const specialRadius = 123;
+        
         const map = L.map('map').setView(points[0], 9);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -698,7 +765,8 @@ const specialPoints = [
         let isSpecialSoundPlaying = false; // Для специального звука
         let soundInterval;
         let specialSoundInterval; // Для специального звука
-        let volume = 0.5; // Значение громкости (0-1)
+        let volume = 0.5; // Значение громкости (0-1) для обычного звука
+        let specialVolume = 0.5; // Значение громкости (0-1) для специального звука
         
         // Обновление радиуса предупреждения на основе скорости
         function updateDynamicRadius() {
@@ -746,25 +814,27 @@ const specialPoints = [
             L.marker(point).addTo(map);
         });
         
-        // Создание специальных кругов с фиксированным радиусом 200 метров
-        specialPoints.forEach(point => {
-            const circle = L.circle(point, {
-                radius: 200, // Фиксированный радиус 200 метров
-                color: 'red',
-                fillColor: 'red',
-                fillOpacity: 0.2,
-                weight: 2
-            }).addTo(map);
-            specialCircles.push(circle);
-            
-            // Добавляем красные маркеры для специальных точек
-            L.marker(point, {
-                icon: L.divIcon({
-                    className: 'special-marker-icon',
-                    iconSize: [15, 15]
-                })
-            }).addTo(map);
-        });
+        // Создание специальных кругов с фиксированным радиусом
+      specialPoints.forEach((point, index) => {
+    const pointColor = specialPointColors[index]; // Получаем цвет для текущей точки
+    
+    const circle = L.circle(point, {
+        radius: specialRadius, // Фиксированный радиус 321 метр
+        color: pointColor,
+        fillColor: pointColor,
+        fillOpacity: 0.2,
+        weight: 2
+    }).addTo(map);
+    specialCircles.push(circle);
+    
+    // Добавляем маркеры для специальных точек с соответствующим цветом
+    L.marker(point, {
+        icon: L.divIcon({
+            className: pointColor === 'green' ? 'green-marker-icon' : 'special-marker-icon',
+            iconSize: [15, 15]
+        })
+    }).addTo(map);
+});
         
         // Функция для расчета расстояния между двумя точками в метрах
         function calculateDistance(point1, point2) {
@@ -825,8 +895,8 @@ const specialPoints = [
                 
                 specialPointDistances[index].currentDistance = distance;
                 
-                // Определяем, находимся ли мы в зоне специальной точки (200 метров)
-                specialPointDistances[index].inZone = distance <= 200;
+                // Определяем, находимся ли мы в зоне специальной точки
+                specialPointDistances[index].inZone = distance <= specialRadius;
                 
                 if (specialPointDistances[index].inZone) {
                     isInSpecialZone = true;
@@ -882,8 +952,8 @@ const specialPoints = [
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(2000, audioContext.currentTime); // Частота 2000 Гц
             
-            // Применяем текущую громкость
-            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            // Применяем текущую громкость для специального звука
+            gainNode.gain.setValueAtTime(specialVolume, audioContext.currentTime);
             
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
@@ -924,7 +994,7 @@ const specialPoints = [
             
             // Показываем спидометр и регулятор громкости
             document.getElementById('speedometer').classList.remove('hidden');
-            document.getElementById('volumeControl').classList.remove('hidden');
+            document.getElementById('volumeControls').classList.remove('hidden');
             
             // Рассчитываем скорость, если есть предыдущее положение
             if (lastUserPosition && lastPositionTimestamp) {
@@ -1064,10 +1134,66 @@ const specialPoints = [
             unfollowBtn.classList.toggle('hidden');
         }
         
-        // Обработчик регулятора громкости
-        document.getElementById('volumeSlider').addEventListener('input', (e) => {
-            volume = e.target.value / 100; // Переводим значение слайдера (0-100) в диапазон 0-1
-        });
-    </script>
+       
+// Обработчик регулятора громкости для обычного звука
+document.getElementById('volumeSlider').addEventListener('input', (e) => {
+    volume = e.target.value / 100; // Переводим значение слайдера (0-100) в диапазон 0-1
+});
+
+// Обработчик регулятора громкости для специального звука
+document.getElementById('specialVolumeSlider').addEventListener('input', (e) => {
+    specialVolume = e.target.value / 100; // Переводим значение слайдера (0-100) в диапазон 0-1
+});
+
+// Обработчик для прекращения отслеживания при закрытии страницы
+window.addEventListener('beforeunload', () => {
+    if (map) {
+        map.stopLocate();
+    }
+    if (isPlaying) {
+        clearInterval(soundInterval);
+    }
+    if (isSpecialSoundPlaying) {
+        clearInterval(specialSoundInterval);
+    }
+});
+
+// Функция для обновления текста предупреждения
+function updateWarningText() {
+    const warningText = document.getElementById('warningText');
+    const alertDistance = document.getElementById('alertDistance');
+    
+    alertDistance.textContent = Math.round(dynamicRadius);
+}
+
+// Инициализация интерфейса при загрузке страницы
+function initializeUI() {
+    updateWarningText();
+    
+    // Устанавливаем начальные значения громкости из слайдеров
+    volume = document.getElementById('volumeSlider').value / 100;
+    specialVolume = document.getElementById('specialVolumeSlider').value / 100;
+}
+
+// Вызываем инициализацию UI при загрузке страницы
+window.addEventListener('load', initializeUI);
+
+// Добавление обработчика для клика по карте (отключение следования)
+map.on('click', () => {
+    if (isFollowing) {
+        isFollowing = false;
+        toggleFollowButtons();
+    }
+});
+
+// Экспорт функций для тестирования (если необходимо)
+window.appFunctions = {
+    calculateDistance,
+    calculateSpeed,
+    updateDynamicRadius,
+    playSoundCycle,
+    playSpecialSoundCycle
+};
+</script>
 </body>
 </html>
